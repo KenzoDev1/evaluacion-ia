@@ -102,7 +102,7 @@ rag_chain = (
 
 # 7. Prueba rápida en terminal
 print("\n=== SISTEMA INICIADO ===")
-pregunta = "¿Cuáles son las medidas preventivas en caso de incendio?"
+pregunta = input("Haz una pregunta sobre los protocolos de seguridad de AquaChile: ")
 print(f"Pregunta: {pregunta}")
 respuesta = rag_chain.invoke(pregunta)
 print("\n=== RESPUESTA DEL AGENTE ===")
