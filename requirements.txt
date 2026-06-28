@@ -3,3 +3,9 @@ langchain-google-genai
 langchain-community
 chromadb
 python-dotenv
+streamlit
+plotly
+psutil
+altair
+jsonlines
+pandas

@@ -5,6 +5,9 @@ from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_classic.memory import ConversationBufferMemory
 
+from observability import ObservabilityCallbackHandler
+from security import check_api_key, validate_input, rate_limit
+
 from langchain_core.tools import tool
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
@@ -114,6 +117,9 @@ if __name__ == "__main__":
     print("🤖 SISTEMA AUTÓNOMO DE AUDITORÍA - AQUACHILE")
     print("="*60 + "\n")
     
+    # Seguridad: Verificar que la API KEY existe
+    check_api_key()
+    
     while True:
         try:
             user_input = input("\nDescriba el incidente a auditar (o escriba 'salir' para terminar):\n> ")
@@ -124,8 +130,24 @@ if __name__ == "__main__":
             if not user_input.strip():
                 continue
                 
+            # Seguridad: Validación y sanitización
+            user_input = validate_input(user_input)
+            
+            # Seguridad: Rate Limit (máximo 10 por minuto)
+            rate_limit()
+            
+            # Observabilidad: Crear callback handler para instrumentar el ciclo
+            obs_handler = ObservabilityCallbackHandler()
+                
             print("\n[Procesando con el Agente LangChain...]\n")
-            respuesta = agent_executor.invoke({"input": user_input})
+            # Inyectar el callback de observabilidad
+            respuesta = agent_executor.invoke(
+                {"input": user_input},
+                config={"callbacks": [obs_handler]}
+            )
+            
+            # Guardar el registro al finalizar la ejecución
+            obs_handler.save_log()
             
             print("\n" + "="*60)
             print("✅ RESOLUCIÓN:")
@@ -144,5 +166,7 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             print("\n\nCierre forzado.")
             break
+        except (ValueError, PermissionError) as security_err:
+            print(f"\n🛡️ {security_err}\n")
         except Exception as e:
-            print(f"\nError durante la ejecución: {e}\n")
+            print(f"\n❌ Error durante la ejecución del agente: {e}\n")

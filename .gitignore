@@ -7,3 +7,5 @@ env/
 .DS_Store
 acta_auditoria.txt
 chroma_db_seguridad/
+logs/
+skills/
